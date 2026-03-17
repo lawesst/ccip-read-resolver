@@ -1,0 +1,30 @@
+{
+  "name": "ccip-read-resolver",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal ENS CCIP-Read offchain resolver demo using EIP-3668 and EIP-712",
+  "scripts": {
+    "build": "forge build",
+    "typecheck": "tsc --noEmit",
+    "test": "forge test -vv",
+    "deploy": "tsx scripts/deploy.ts",
+    "sign": "tsx scripts/sign.ts",
+    "gateway": "tsx gateway/server.ts",
+    "demo": "tsx scripts/demo.ts",
+    "check": "npm run typecheck && npm run build && npm run test"
+  },
+  "keywords": [],
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.6.1",
+    "ethers": "^6.16.0",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.5.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
