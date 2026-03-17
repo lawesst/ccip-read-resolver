@@ -46,11 +46,39 @@ export function createGatewayApp(context: GatewayContext): Express {
   app.disable("x-powered-by");
   app.use(express.json({ limit: "32kb" }));
 
+  app.get("/", (_request: Request, response: Response) => {
+    response.json({
+      ok: true,
+      service: "ccip-read-resolver-gateway",
+      endpoints: {
+        healthz: "/healthz",
+        resolve: {
+          method: "POST",
+          path: "/resolve",
+        },
+      },
+    });
+  });
+
   app.get("/healthz", (_request: Request, response: Response) => {
     response.json({
       ok: true,
       chainId: context.chainId.toString(),
       resolver: context.expectedResolver ?? null,
+    });
+  });
+
+  app.get("/resolve", (_request: Request, response: Response) => {
+    response.json({
+      ok: true,
+      message: "CCIP-Read clients must POST to /resolve",
+      expectedBody: {
+        resolver: "0xresolverAddress",
+        name: "0xdnsEncodedName",
+        data: "0xresolverCalldata",
+      },
+      configuredResolver: context.expectedResolver ?? null,
+      chainId: context.chainId.toString(),
     });
   });
 
