@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: ccip-read-resolver-gateway
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run typecheck
+    startCommand: npm run gateway
+    healthCheckPath: /healthz
+    envVars:
+      - key: CHAIN_ID
+        value: "11155111"
+      - key: SEPOLIA_RPC_URL
+        sync: false
+      - key: SIGNER_PRIVATE_KEY
+        sync: false
+      - key: RESOLVER_ADDRESS
+        sync: false

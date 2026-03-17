@@ -1,13 +1,19 @@
+import "dotenv/config";
+
 import { readFileSync } from "node:fs";
 
-import { ContractFactory, type InterfaceAbi, JsonRpcProvider, Wallet } from "ethers";
+import {
+  ContractFactory,
+  type InterfaceAbi,
+  JsonRpcProvider,
+  Wallet,
+  formatEther,
+} from "ethers";
 
 import {
-  DEFAULT_ANVIL_RPC_URL,
   DEFAULT_DEPLOYER_PRIVATE_KEY,
-  DEFAULT_GATEWAY_PORT,
-  DEFAULT_SIGNER_PRIVATE_KEY,
 } from "../src/config.js";
+import { getAllowedSignerAddress, getGatewayUrl, getRpcUrl } from "../src/runtime.js";
 
 interface FoundryArtifact {
   abi: InterfaceAbi;
@@ -38,20 +44,31 @@ function getBytecode(artifact: FoundryArtifact): string {
   return rawBytecode.startsWith("0x") ? rawBytecode : `0x${rawBytecode}`;
 }
 
-const rpcUrl = process.env.RPC_URL ?? DEFAULT_ANVIL_RPC_URL;
+const rpcUrl = getRpcUrl();
 const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY ?? DEFAULT_DEPLOYER_PRIVATE_KEY;
-const signerPrivateKey = process.env.SIGNER_PRIVATE_KEY ?? DEFAULT_SIGNER_PRIVATE_KEY;
-const gatewayUrl = process.env.GATEWAY_URL ?? `http://127.0.0.1:${DEFAULT_GATEWAY_PORT}/resolve`;
+const gatewayUrl = getGatewayUrl();
 
 const provider = new JsonRpcProvider(rpcUrl);
 const deployer = new Wallet(deployerPrivateKey, provider);
-const allowedSigner = new Wallet(signerPrivateKey);
+const allowedSignerAddress = getAllowedSignerAddress();
 const artifact = loadResolverArtifact();
 const factory = new ContractFactory(artifact.abi, getBytecode(artifact), deployer);
+const balanceBefore = await provider.getBalance(deployer.address);
+const network = await provider.getNetwork();
 
-const resolver = await factory.deploy(allowedSigner.address, gatewayUrl);
+const resolver = await factory.deploy(allowedSignerAddress, gatewayUrl);
 await resolver.waitForDeployment();
 
+const balanceAfter = await provider.getBalance(deployer.address);
+const deploymentTx = resolver.deploymentTransaction();
+
 console.log(`Resolver deployed at ${await resolver.getAddress()}`);
-console.log(`Allowed signer: ${allowedSigner.address}`);
+console.log(`Network chainId: ${network.chainId.toString()}`);
+console.log(`Deployer: ${deployer.address}`);
+console.log(`Allowed signer: ${allowedSignerAddress}`);
 console.log(`Gateway URL: ${gatewayUrl}`);
+if (deploymentTx) {
+  console.log(`Deployment tx: ${deploymentTx.hash}`);
+}
+console.log(`Deployer balance before: ${formatEther(balanceBefore)} ETH`);
+console.log(`Deployer balance after: ${formatEther(balanceAfter)} ETH`);

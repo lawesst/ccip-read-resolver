@@ -46,6 +46,14 @@ export function createGatewayApp(context: GatewayContext): Express {
   app.disable("x-powered-by");
   app.use(express.json({ limit: "32kb" }));
 
+  app.get("/healthz", (_request: Request, response: Response) => {
+    response.json({
+      ok: true,
+      chainId: context.chainId.toString(),
+      resolver: context.expectedResolver ?? null,
+    });
+  });
+
   app.post("/resolve", async (request: Request, response: Response) => {
     try {
       const resolverAddress = request.body?.resolver;

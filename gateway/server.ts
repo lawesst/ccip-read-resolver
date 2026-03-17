@@ -1,20 +1,18 @@
+import "dotenv/config";
+
 import { JsonRpcProvider, Wallet, getAddress } from "ethers";
 
 import {
-  DEFAULT_ANVIL_RPC_URL,
   DEFAULT_GATEWAY_PORT,
   DEFAULT_SIGNER_PRIVATE_KEY,
 } from "../src/config.js";
 import { createGatewayApp } from "../src/gateway.js";
+import { getRpcUrl, requireEnv } from "../src/runtime.js";
 
-const rpcUrl = process.env.RPC_URL ?? DEFAULT_ANVIL_RPC_URL;
+const rpcUrl = getRpcUrl();
 const privateKey = process.env.SIGNER_PRIVATE_KEY ?? DEFAULT_SIGNER_PRIVATE_KEY;
 const port = Number(process.env.PORT ?? DEFAULT_GATEWAY_PORT);
-const resolverAddress = process.env.RESOLVER_ADDRESS;
-
-if (!resolverAddress) {
-  throw new Error("RESOLVER_ADDRESS is required so the gateway only signs for one resolver");
-}
+const resolverAddress = requireEnv("RESOLVER_ADDRESS");
 
 const provider = new JsonRpcProvider(rpcUrl);
 const { chainId } = await provider.getNetwork();

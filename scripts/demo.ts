@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 import { readFileSync } from "node:fs";
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -11,7 +13,6 @@ import {
 } from "ethers";
 
 import {
-  DEFAULT_ANVIL_RPC_URL,
   DEFAULT_DEPLOYER_PRIVATE_KEY,
   DEFAULT_SAMPLE_NAME,
   DEFAULT_SIGNER_PRIVATE_KEY,
@@ -20,6 +21,7 @@ import {
 import { buildTextLookup, decodeTextResult } from "../src/ens.js";
 import { createGatewayApp, decodeResolveCallData } from "../src/gateway.js";
 import { encodeGatewayResponse, recoverResolverSigner } from "../src/signing.js";
+import { getRpcUrl } from "../src/runtime.js";
 
 interface FoundryArtifact {
   abi: InterfaceAbi;
@@ -101,7 +103,7 @@ async function stopGateway(httpServer: Server): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const rpcUrl = process.env.RPC_URL ?? DEFAULT_ANVIL_RPC_URL;
+  const rpcUrl = getRpcUrl();
   const deployerPrivateKey =
     process.env.DEPLOYER_PRIVATE_KEY ?? DEFAULT_DEPLOYER_PRIVATE_KEY;
   const signerPrivateKey = process.env.SIGNER_PRIVATE_KEY ?? DEFAULT_SIGNER_PRIVATE_KEY;

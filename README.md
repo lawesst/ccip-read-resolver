@@ -57,6 +57,8 @@ The demo is designed to be easy to inspect in a grant review:
   - simulates the full CCIP-Read flow end to end
 - `test/OffchainResolver.t.sol`
   - proves valid proof success, expired proof failure, and wrong signer failure
+- `.env.example`
+  - template for Sepolia deployment, verification, and live proof variables
 
 ## How CCIP-Read Works In This Repo
 
@@ -193,6 +195,74 @@ Example response:
   "signature": "0x..."
 }
 ```
+
+### Render Hosting Notes
+
+If you host the gateway on Render, choose:
+
+- Service type: `Web Service`
+- Build Command: `npm ci && npm run typecheck`
+- Start Command: `npm run gateway`
+- Health Check Path: `/healthz`
+
+Do not use `npm run build` on Render for the gateway service. `npm run build` runs `forge build`, and Render's default Node environment does not include Foundry. The hosted gateway only needs Node dependencies and the TypeScript runtime.
+
+Checked-in Render config:
+
+- [render.yaml](/Users/vicgunga/ccip-read-resolver/render.yaml)
+
+Required Render environment variables:
+
+- `SEPOLIA_RPC_URL`
+- `SIGNER_PRIVATE_KEY`
+- `RESOLVER_ADDRESS`
+- `CHAIN_ID=11155111`
+
+## Sepolia Deployment
+
+This repo is prepared for Sepolia deployment end to end.
+
+1. Copy the environment template:
+
+```bash
+cp .env.example .env
+```
+
+2. Fill in at least:
+   - `SEPOLIA_RPC_URL`
+   - `DEPLOYER_PRIVATE_KEY`
+   - `SIGNER_PRIVATE_KEY`
+   - `GATEWAY_URL`
+   - `ETHERSCAN_API_KEY`
+
+3. Deploy the resolver:
+
+```bash
+npm run build
+npm run deploy:sepolia
+```
+
+4. Put the deployed address into `.env` as `RESOLVER_ADDRESS`.
+
+5. Start the gateway against that deployed resolver:
+
+```bash
+npm run gateway
+```
+
+6. Verify the contract source on Etherscan:
+
+```bash
+npm run verify:sepolia
+```
+
+7. Run a live proof against the public deployment:
+
+```bash
+npm run prove:sepolia
+```
+
+The full Sepolia runbook and reviewer checklist are in [docs/sepolia-deployment.md](/Users/vicgunga/ccip-read-resolver/docs/sepolia-deployment.md).
 
 ## Example Output
 
