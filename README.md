@@ -264,6 +264,43 @@ npm run prove:sepolia
 
 The full Sepolia runbook and reviewer checklist are in [docs/sepolia-deployment.md](/Users/vicgunga/ccip-read-resolver/docs/sepolia-deployment.md).
 
+## Live Deployment
+
+This repository is now deployed publicly on Sepolia with a live hosted gateway.
+
+- Network: `Sepolia`
+- Verified resolver contract: [0x93D1ba29FaDC0bA6a8863A9B21C70d6D5Db006dd](https://sepolia.etherscan.io/address/0x93D1ba29FaDC0bA6a8863A9B21C70d6D5Db006dd#code)
+- Deployment transaction: [0x87f04a1da6077d3995813876f8c690000aadc64598ca8f8d29622da07fff77a8](https://sepolia.etherscan.io/tx/0x87f04a1da6077d3995813876f8c690000aadc64598ca8f8d29622da07fff77a8)
+- Allowed signer: `0x5508532b027D57b020e6C0BeDB1fE19a6d6C555c`
+- Gateway root: [https://ccip-read-resolver-2.onrender.com](https://ccip-read-resolver-2.onrender.com)
+- Gateway health: [https://ccip-read-resolver-2.onrender.com/healthz](https://ccip-read-resolver-2.onrender.com/healthz)
+- Gateway resolve endpoint: [https://ccip-read-resolver-2.onrender.com/resolve](https://ccip-read-resolver-2.onrender.com/resolve)
+
+The live proof command is:
+
+```bash
+npm run prove:sepolia
+```
+
+Successful live proof output:
+
+```text
+Resolver: 0x93D1ba29FaDC0bA6a8863A9B21C70d6D5Db006dd
+Gateway URL: https://ccip-read-resolver-2.onrender.com/resolve
+Callback selector: 0xf4d4d2f8
+Recovered signer: 0x5508532b027D57b020e6C0BeDB1fE19a6d6C555c
+Resolved name: alice.eth
+Text key: url
+Final resolved value: https://resolver.demo/alice.eth/url
+```
+
+This provides public, verifiable evidence of:
+
+- EIP-3668 `OffchainLookup`
+- EIP-712 typed data signing
+- offchain gateway signing with onchain verification
+- a full live resolver -> gateway -> resolver round-trip on Sepolia
+
 ## Example Output
 
 Example successful `npm run demo` output:
