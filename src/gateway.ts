@@ -2,7 +2,7 @@ import express, { type Express, type Request, type Response } from "express";
 import { AbiCoder, Wallet, getAddress, namehash } from "ethers";
 
 import { buildTextResult, dnsDecodeName, ensResolverInterface } from "./ens.js";
-import { signResolverResponse } from "./signing.js";
+import { encodeGatewayResponse, signResolverResponse } from "./signing.js";
 
 export interface GatewayContext {
   signer: Wallet;
@@ -40,6 +40,51 @@ function buildResolverResult(name: string, data: string): string {
   return buildTextResult(`https://resolver.demo/${decodedName}/${key}`);
 }
 
+async function buildSignedGatewayPayload(
+  context: GatewayContext,
+  resolverAddress: string,
+  name: string,
+  data: string,
+): Promise<{
+  result: string;
+  validUntil: number;
+  signature: string;
+  response: string;
+}> {
+  const resolver = getAddress(resolverAddress);
+  if (
+    context.expectedResolver !== undefined &&
+    resolver.toLowerCase() !== context.expectedResolver.toLowerCase()
+  ) {
+    throw new Error("Gateway is configured for a different resolver address");
+  }
+
+  const result = buildResolverResult(name, data);
+  const currentTimestamp = context.getCurrentTimestamp
+    ? await context.getCurrentTimestamp()
+    : Math.floor(Date.now() / 1000);
+  const validUntil = currentTimestamp + 10 * 60;
+
+  const signedResponse = await signResolverResponse(context.signer, context.chainId, {
+    name,
+    data,
+    result,
+    validUntil,
+    resolver,
+  });
+
+  return {
+    result: signedResponse.result,
+    validUntil,
+    signature: signedResponse.signature,
+    response: encodeGatewayResponse(
+      signedResponse.result,
+      validUntil,
+      signedResponse.signature,
+    ),
+  };
+}
+
 export function createGatewayApp(context: GatewayContext): Express {
   const app = express();
 
@@ -73,9 +118,15 @@ export function createGatewayApp(context: GatewayContext): Express {
       ok: true,
       message: "CCIP-Read clients must POST to /resolve",
       expectedBody: {
-        resolver: "0xresolverAddress",
-        name: "0xdnsEncodedName",
-        data: "0xresolverCalldata",
+        standard: {
+          sender: "0xresolverAddress",
+          data: "0xoffchainLookupCallData",
+        },
+        demo: {
+          resolver: "0xresolverAddress",
+          name: "0xdnsEncodedName",
+          data: "0xresolverCalldata",
+        },
       },
       configuredResolver: context.expectedResolver ?? null,
       chainId: context.chainId.toString(),
@@ -84,55 +135,53 @@ export function createGatewayApp(context: GatewayContext): Express {
 
   app.post("/resolve", async (request: Request, response: Response) => {
     try {
-      const resolverAddress = request.body?.resolver;
-      const name = request.body?.name;
-      const data = request.body?.data;
+      if (typeof request.body?.sender === "string" && typeof request.body?.data === "string") {
+        const requestPayload = decodeResolveCallData(request.body.data);
+        const signedPayload = await buildSignedGatewayPayload(
+          context,
+          request.body.sender,
+          requestPayload.name,
+          requestPayload.data,
+        );
 
-      if (
-        typeof resolverAddress !== "string" ||
-        typeof name !== "string" ||
-        typeof data !== "string"
-      ) {
-        response.status(400).json({
-          error: 'Expected JSON body with string fields "resolver", "name", and "data"',
+        response.json({
+          data: signedPayload.response,
         });
         return;
       }
 
-      const resolver = getAddress(resolverAddress);
       if (
-        context.expectedResolver !== undefined &&
-        resolver.toLowerCase() !== context.expectedResolver.toLowerCase()
+        typeof request.body?.resolver === "string" &&
+        typeof request.body?.name === "string" &&
+        typeof request.body?.data === "string"
       ) {
-        response.status(403).json({
-          error: "Gateway is configured for a different resolver address",
+        const signedPayload = await buildSignedGatewayPayload(
+          context,
+          request.body.resolver,
+          request.body.name,
+          request.body.data,
+        );
+
+        response.json({
+          result: signedPayload.result,
+          validUntil: signedPayload.validUntil,
+          signature: signedPayload.signature,
+          data: signedPayload.response,
         });
         return;
       }
 
-      const result = buildResolverResult(name, data);
-      const currentTimestamp = context.getCurrentTimestamp
-        ? await context.getCurrentTimestamp()
-        : Math.floor(Date.now() / 1000);
-      const validUntil = currentTimestamp + 10 * 60;
-
-      const signedResponse = await signResolverResponse(context.signer, context.chainId, {
-        name,
-        data,
-        result,
-        validUntil,
-        resolver,
-      });
-
-      response.json({
-        result: signedResponse.result,
-        validUntil,
-        signature: signedResponse.signature,
+      response.status(400).json({
+        error:
+          'Expected either {"sender","data"} for CCIP-Read clients or {"resolver","name","data"} for demo scripts',
       });
     } catch (error) {
-      response.status(400).json({
-        error: error instanceof Error ? error.message : "Unknown gateway error",
-      });
+      const message = error instanceof Error ? error.message : "Unknown gateway error";
+      response
+        .status(message === "Gateway is configured for a different resolver address" ? 403 : 400)
+        .json({
+          error: message,
+        });
     }
   });
 
