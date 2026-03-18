@@ -10,6 +10,7 @@ import {
 
 interface Vm {
     function addr(uint256 privateKey) external returns (address);
+    function expectRevert(bytes4 revertData) external;
     function expectRevert(bytes calldata revertData) external;
     function sign(
         uint256 privateKey,
@@ -21,6 +22,7 @@ contract OffchainResolverTest {
     Vm private constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
     bytes4 private constant INTERFACE_ID_ERC165 = 0x01ffc9a7;
     bytes4 private constant INTERFACE_ID_IEXTENDED_RESOLVER = 0x9061b923;
+    bytes4 private constant ADDR_SELECTOR = 0x3b3b57de;
 
     bytes32 private constant RESPONSE_TYPEHASH =
         keccak256(
@@ -115,6 +117,62 @@ contract OffchainResolverTest {
         resolver.resolveWithProof(response, abi.encode(name, data));
     }
 
+    function testResolveWithProofReturnsSignedAddrResult() public {
+        bytes memory name = hex"05616c6963650365746800";
+        bytes32 node = keccak256(
+            abi.encodePacked(
+                keccak256(abi.encodePacked(bytes32(0), keccak256(bytes("eth")))),
+                keccak256(bytes("alice"))
+            )
+        );
+        bytes memory data = abi.encodeWithSelector(ADDR_SELECTOR, node);
+        address expectedAddress = vm.addr(ALLOWED_SIGNER_KEY);
+        bytes memory result = abi.encode(expectedAddress);
+        uint64 validUntil = uint64(block.timestamp + 600);
+
+        bytes memory response = abi.encode(
+            result,
+            validUntil,
+            _signResponse(name, data, result, validUntil, ALLOWED_SIGNER_KEY)
+        );
+
+        bytes memory returnedResult = resolver.resolveWithProof(response, abi.encode(name, data));
+        require(abi.decode(returnedResult, (address)) == expectedAddress, "resolver returned wrong addr");
+    }
+
+    function testResolveWithProofRevertsWhenAddrProofIsReplayedForDifferentNode() public {
+        bytes memory name = hex"05616c6963650365746800";
+        bytes32 aliceNode = keccak256(
+            abi.encodePacked(
+                keccak256(abi.encodePacked(bytes32(0), keccak256(bytes("eth")))),
+                keccak256(bytes("alice"))
+            )
+        );
+        bytes32 bobNode = keccak256(
+            abi.encodePacked(
+                keccak256(abi.encodePacked(bytes32(0), keccak256(bytes("eth")))),
+                keccak256(bytes("bob"))
+            )
+        );
+        bytes memory signedData = abi.encodeWithSelector(ADDR_SELECTOR, aliceNode);
+        bytes memory replayedData = abi.encodeWithSelector(ADDR_SELECTOR, bobNode);
+        bytes memory result = abi.encode(vm.addr(ALLOWED_SIGNER_KEY));
+        uint64 validUntil = uint64(block.timestamp + 600);
+
+        bytes memory response = abi.encode(
+            result,
+            validUntil,
+            _signResponse(name, signedData, result, validUntil, ALLOWED_SIGNER_KEY)
+        );
+
+        (bool ok, bytes memory revertData) = address(resolver).staticcall(
+            abi.encodeCall(resolver.resolveWithProof, (response, abi.encode(name, replayedData)))
+        );
+
+        require(!ok, "replayed addr proof should revert");
+        require(_revertSelector(revertData) == InvalidSigner.selector, "expected InvalidSigner");
+    }
+
     function testSupportsInterfaceForErc165() public view {
         require(
             resolver.supportsInterface(INTERFACE_ID_ERC165),
@@ -153,5 +211,12 @@ contract OffchainResolverTest {
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerKey, digest);
         return abi.encodePacked(r, s, v);
+    }
+
+    function _revertSelector(bytes memory revertData) internal pure returns (bytes4 selector) {
+        require(revertData.length >= 4, "revert data too short");
+        assembly {
+            selector := mload(add(revertData, 32))
+        }
     }
 }
