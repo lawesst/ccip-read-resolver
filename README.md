@@ -269,12 +269,13 @@ The full Sepolia runbook and reviewer checklist are in [docs/sepolia-deployment.
 This repository is now deployed publicly on Sepolia with a live hosted gateway.
 
 - Network: `Sepolia`
-- Verified resolver contract: [0x93D1ba29FaDC0bA6a8863A9B21C70d6D5Db006dd](https://sepolia.etherscan.io/address/0x93D1ba29FaDC0bA6a8863A9B21C70d6D5Db006dd#code)
-- Deployment transaction: [0x87f04a1da6077d3995813876f8c690000aadc64598ca8f8d29622da07fff77a8](https://sepolia.etherscan.io/tx/0x87f04a1da6077d3995813876f8c690000aadc64598ca8f8d29622da07fff77a8)
+- Verified resolver contract: [0x596EBB34AD8A020693E596EB03472daF57aF7910](https://sepolia.etherscan.io/address/0x596EBB34AD8A020693E596EB03472daF57aF7910#code)
+- Deployment transaction: [0xeaa95a3af4f5a5143c6e4bad7a6ea373222e00064b735a11c8ec288f32aa9a9c](https://sepolia.etherscan.io/tx/0xeaa95a3af4f5a5143c6e4bad7a6ea373222e00064b735a11c8ec288f32aa9a9c)
 - Allowed signer: `0x5508532b027D57b020e6C0BeDB1fE19a6d6C555c`
 - Gateway root: [https://ccip-read-resolver-2.onrender.com](https://ccip-read-resolver-2.onrender.com)
 - Gateway health: [https://ccip-read-resolver-2.onrender.com/healthz](https://ccip-read-resolver-2.onrender.com/healthz)
 - Gateway resolve endpoint: [https://ccip-read-resolver-2.onrender.com/resolve](https://ccip-read-resolver-2.onrender.com/resolve)
+- ENSIP-10 support: `supportsInterface(0x9061b923) == true`
 
 The live proof command is:
 
@@ -285,7 +286,7 @@ npm run prove:sepolia
 Successful live proof output:
 
 ```text
-Resolver: 0x93D1ba29FaDC0bA6a8863A9B21C70d6D5Db006dd
+Resolver: 0x596EBB34AD8A020693E596EB03472daF57aF7910
 Gateway URL: https://ccip-read-resolver-2.onrender.com/resolve
 Callback selector: 0xf4d4d2f8
 Recovered signer: 0x5508532b027D57b020e6C0BeDB1fE19a6d6C555c
@@ -298,6 +299,7 @@ This provides public, verifiable evidence of:
 
 - EIP-3668 `OffchainLookup`
 - EIP-712 typed data signing
+- ENSIP-10 extended resolver interface support
 - offchain gateway signing with onchain verification
 - a full live resolver -> gateway -> resolver round-trip on Sepolia
 
