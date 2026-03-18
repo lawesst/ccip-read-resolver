@@ -19,6 +19,8 @@ interface Vm {
 
 contract OffchainResolverTest {
     Vm private constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
+    bytes4 private constant INTERFACE_ID_ERC165 = 0x01ffc9a7;
+    bytes4 private constant INTERFACE_ID_IEXTENDED_RESOLVER = 0x9061b923;
 
     bytes32 private constant RESPONSE_TYPEHASH =
         keccak256(
@@ -111,6 +113,20 @@ contract OffchainResolverTest {
             )
         );
         resolver.resolveWithProof(response, abi.encode(name, data));
+    }
+
+    function testSupportsInterfaceForErc165() public view {
+        require(
+            resolver.supportsInterface(INTERFACE_ID_ERC165),
+            "resolver should advertise ERC165"
+        );
+    }
+
+    function testSupportsInterfaceForExtendedResolver() public view {
+        require(
+            resolver.supportsInterface(INTERFACE_ID_IEXTENDED_RESOLVER),
+            "resolver should advertise ENSIP-10"
+        );
     }
 
     function _signResponse(

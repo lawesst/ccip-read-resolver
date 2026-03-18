@@ -20,6 +20,17 @@ error InvalidSigner(address recoveredSigner, address expectedSigner);
 /// @title OffchainResolver
 /// @notice Minimal ENS-style CCIP-Read resolver that verifies offchain responses with EIP-712.
 contract OffchainResolver {
+    // ERC-165 interface IDs used by ENS-aware clients.
+    //
+    // - 0x01ffc9a7 is IERC165.supportsInterface(bytes4)
+    // - 0x9061b923 is ENSIP-10 / IExtendedResolver.resolve(bytes,bytes)
+    //
+    // Advertising the extended resolver interface is what allows ENS tooling such as the
+    // Universal Resolver to detect that this contract supports wildcard-style offchain
+    // resolution via resolve(bytes,bytes).
+    bytes4 private constant INTERFACE_ID_ERC165 = 0x01ffc9a7;
+    bytes4 private constant INTERFACE_ID_IEXTENDED_RESOLVER = 0x9061b923;
+
     // EIP-712 domain fields. The domain binds signatures to:
     // - a human-readable protocol name
     // - a version
@@ -158,6 +169,15 @@ contract OffchainResolver {
     /// @notice Exposes the current EIP-712 domain separator for testing and tooling.
     function domainSeparator() external view returns (bytes32) {
         return _domainSeparatorV4();
+    }
+
+    /// @notice ERC-165 interface detection used by ENS clients and the Universal Resolver.
+    /// @dev Returning the ENSIP-10 interface ID makes this contract discoverable as an
+    ///      extended resolver that can answer generic resolve(bytes,bytes) lookups.
+    function supportsInterface(bytes4 interfaceID) external pure returns (bool) {
+        return
+            interfaceID == INTERFACE_ID_ERC165
+                || interfaceID == INTERFACE_ID_IEXTENDED_RESOLVER;
     }
 
     function _domainSeparatorV4() internal view returns (bytes32) {
