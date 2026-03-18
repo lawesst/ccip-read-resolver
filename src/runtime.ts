@@ -6,21 +6,33 @@ import {
   DEFAULT_SIGNER_PRIVATE_KEY,
 } from "./config.js";
 
+export function getOptionalEnv(name: string): string | undefined {
+  const value = process.env[name];
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
 export function getRpcUrl(): string {
-  return process.env.SEPOLIA_RPC_URL ?? process.env.RPC_URL ?? DEFAULT_ANVIL_RPC_URL;
+  return getOptionalEnv("SEPOLIA_RPC_URL") ?? getOptionalEnv("RPC_URL") ?? DEFAULT_ANVIL_RPC_URL;
 }
 
 export function getGatewayUrl(): string {
-  return process.env.GATEWAY_URL ?? `http://127.0.0.1:${DEFAULT_GATEWAY_PORT}/resolve`;
+  return getOptionalEnv("GATEWAY_URL") ?? `http://127.0.0.1:${DEFAULT_GATEWAY_PORT}/resolve`;
 }
 
 export function getAllowedSignerAddress(options?: { allowDefaultSigner?: boolean }): string {
-  if (process.env.ALLOWED_SIGNER_ADDRESS) {
-    return getAddress(process.env.ALLOWED_SIGNER_ADDRESS);
+  const allowedSignerAddress = getOptionalEnv("ALLOWED_SIGNER_ADDRESS");
+  if (allowedSignerAddress) {
+    return getAddress(allowedSignerAddress);
   }
 
-  if (process.env.SIGNER_PRIVATE_KEY) {
-    return new Wallet(process.env.SIGNER_PRIVATE_KEY).address;
+  const signerPrivateKey = getOptionalEnv("SIGNER_PRIVATE_KEY");
+  if (signerPrivateKey) {
+    return new Wallet(signerPrivateKey).address;
   }
 
   if (options?.allowDefaultSigner === false) {
@@ -33,7 +45,7 @@ export function getAllowedSignerAddress(options?: { allowDefaultSigner?: boolean
 }
 
 export function requireEnv(name: string): string {
-  const value = process.env[name];
+  const value = getOptionalEnv(name);
   if (!value) {
     throw new Error(`Missing required environment variable: ${name}`);
   }

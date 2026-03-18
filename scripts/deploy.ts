@@ -13,7 +13,12 @@ import {
 import {
   DEFAULT_DEPLOYER_PRIVATE_KEY,
 } from "../src/config.js";
-import { getAllowedSignerAddress, getGatewayUrl, getRpcUrl } from "../src/runtime.js";
+import {
+  getAllowedSignerAddress,
+  getGatewayUrl,
+  getOptionalEnv,
+  getRpcUrl,
+} from "../src/runtime.js";
 
 interface FoundryArtifact {
   abi: InterfaceAbi;
@@ -45,7 +50,7 @@ function getBytecode(artifact: FoundryArtifact): string {
 }
 
 const rpcUrl = getRpcUrl();
-const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY ?? DEFAULT_DEPLOYER_PRIVATE_KEY;
+const deployerPrivateKey = getOptionalEnv("DEPLOYER_PRIVATE_KEY") ?? DEFAULT_DEPLOYER_PRIVATE_KEY;
 const gatewayUrl = getGatewayUrl();
 
 const provider = new JsonRpcProvider(rpcUrl);

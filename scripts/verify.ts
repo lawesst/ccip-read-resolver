@@ -5,14 +5,19 @@ import { spawnSync } from "node:child_process";
 import { AbiCoder } from "ethers";
 
 import { SEPOLIA_CHAIN_ID } from "../src/config.js";
-import { getAllowedSignerAddress, getGatewayUrl, requireEnv } from "../src/runtime.js";
+import {
+  getAllowedSignerAddress,
+  getGatewayUrl,
+  getOptionalEnv,
+  requireEnv,
+} from "../src/runtime.js";
 
 const abiCoder = AbiCoder.defaultAbiCoder();
 const resolverAddress = requireEnv("RESOLVER_ADDRESS");
 const etherscanApiKey = requireEnv("ETHERSCAN_API_KEY");
 const gatewayUrl = getGatewayUrl();
 const allowedSignerAddress = getAllowedSignerAddress({ allowDefaultSigner: false });
-const chainId = Number(process.env.CHAIN_ID ?? SEPOLIA_CHAIN_ID);
+const chainId = Number(getOptionalEnv("CHAIN_ID") ?? SEPOLIA_CHAIN_ID);
 
 const constructorArgs = abiCoder.encode(
   ["address", "string"],

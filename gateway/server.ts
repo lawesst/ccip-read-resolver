@@ -7,11 +7,11 @@ import {
   DEFAULT_SIGNER_PRIVATE_KEY,
 } from "../src/config.js";
 import { createGatewayApp } from "../src/gateway.js";
-import { getRpcUrl, requireEnv } from "../src/runtime.js";
+import { getOptionalEnv, getRpcUrl, requireEnv } from "../src/runtime.js";
 
 const rpcUrl = getRpcUrl();
-const privateKey = process.env.SIGNER_PRIVATE_KEY ?? DEFAULT_SIGNER_PRIVATE_KEY;
-const port = Number(process.env.PORT ?? DEFAULT_GATEWAY_PORT);
+const privateKey = getOptionalEnv("SIGNER_PRIVATE_KEY") ?? DEFAULT_SIGNER_PRIVATE_KEY;
+const port = Number(getOptionalEnv("PORT") ?? DEFAULT_GATEWAY_PORT);
 const resolverAddress = requireEnv("RESOLVER_ADDRESS");
 
 const provider = new JsonRpcProvider(rpcUrl);

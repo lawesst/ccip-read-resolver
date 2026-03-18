@@ -11,7 +11,7 @@ import {
 import { buildTextLookup, decodeTextResult } from "../src/ens.js";
 import { decodeResolveCallData } from "../src/gateway.js";
 import { encodeGatewayResponse, recoverResolverSigner } from "../src/signing.js";
-import { getRpcUrl, requireEnv } from "../src/runtime.js";
+import { getOptionalEnv, getRpcUrl, requireEnv } from "../src/runtime.js";
 
 interface GatewayHttpResponse {
   result: string;
@@ -53,8 +53,8 @@ const rpcUrl = getRpcUrl();
 const resolverAddress = requireEnv("RESOLVER_ADDRESS");
 const provider = new JsonRpcProvider(rpcUrl);
 const resolverInterface = loadResolverInterface();
-const name = process.env.ENS_NAME ?? DEFAULT_SAMPLE_NAME;
-const key = process.env.TEXT_KEY ?? DEFAULT_TEXT_KEY;
+const name = getOptionalEnv("ENS_NAME") ?? DEFAULT_SAMPLE_NAME;
+const key = getOptionalEnv("TEXT_KEY") ?? DEFAULT_TEXT_KEY;
 const lookup = buildTextLookup(name, key);
 const { chainId } = await provider.getNetwork();
 

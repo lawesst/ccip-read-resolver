@@ -21,7 +21,7 @@ import {
 import { buildTextLookup, decodeTextResult } from "../src/ens.js";
 import { createGatewayApp, decodeResolveCallData } from "../src/gateway.js";
 import { encodeGatewayResponse, recoverResolverSigner } from "../src/signing.js";
-import { getRpcUrl } from "../src/runtime.js";
+import { getOptionalEnv, getRpcUrl } from "../src/runtime.js";
 
 interface FoundryArtifact {
   abi: InterfaceAbi;
@@ -105,8 +105,8 @@ async function stopGateway(httpServer: Server): Promise<void> {
 async function main(): Promise<void> {
   const rpcUrl = getRpcUrl();
   const deployerPrivateKey =
-    process.env.DEPLOYER_PRIVATE_KEY ?? DEFAULT_DEPLOYER_PRIVATE_KEY;
-  const signerPrivateKey = process.env.SIGNER_PRIVATE_KEY ?? DEFAULT_SIGNER_PRIVATE_KEY;
+    getOptionalEnv("DEPLOYER_PRIVATE_KEY") ?? DEFAULT_DEPLOYER_PRIVATE_KEY;
+  const signerPrivateKey = getOptionalEnv("SIGNER_PRIVATE_KEY") ?? DEFAULT_SIGNER_PRIVATE_KEY;
   const provider = new JsonRpcProvider(rpcUrl);
   const deployer = new Wallet(deployerPrivateKey, provider);
   const signer = new Wallet(signerPrivateKey);
@@ -142,8 +142,8 @@ async function main(): Promise<void> {
 
     const resolverAddress = await resolver.getAddress();
     const lookup = buildTextLookup(
-      process.env.ENS_NAME ?? DEFAULT_SAMPLE_NAME,
-      process.env.TEXT_KEY ?? DEFAULT_TEXT_KEY,
+      getOptionalEnv("ENS_NAME") ?? DEFAULT_SAMPLE_NAME,
+      getOptionalEnv("TEXT_KEY") ?? DEFAULT_TEXT_KEY,
     );
 
     let sender: string;
