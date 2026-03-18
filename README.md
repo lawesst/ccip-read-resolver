@@ -264,6 +264,43 @@ npm run prove:sepolia
 
 The full Sepolia runbook and reviewer checklist are in [docs/sepolia-deployment.md](/Users/vicgunga/ccip-read-resolver/docs/sepolia-deployment.md).
 
+## Point A Real Sepolia ENS Name At The Resolver
+
+If you control a Sepolia ENS name, you can point it at the live resolver directly onchain.
+
+Set these environment variables first:
+
+```bash
+export TARGET_ENS_NAME=yourname.eth
+export RESOLVER_ADDRESS=0x596EBB34AD8A020693E596EB03472daF57aF7910
+```
+
+If the wallet that controls the name is different from the deployer wallet, also set:
+
+```bash
+export NAME_MANAGER_PRIVATE_KEY=0xYourNameManagerPrivateKey
+```
+
+Then run:
+
+```bash
+npm run set-resolver:sepolia
+```
+
+The script:
+
+- computes the ENS namehash
+- checks the current owner and resolver in the ENS Registry
+- verifies that the target resolver advertises `IERC165` and ENSIP-10 `resolve(bytes,bytes)`
+- detects whether the name is wrapped
+- calls either `ENSRegistry.setResolver(bytes32,address)` or `NameWrapper.setResolver(bytes32,address)`
+- verifies that the Registry now points at the target resolver
+
+By default it uses the official Sepolia ENS deployments:
+
+- ENS Registry: `0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e`
+- Name Wrapper: `0x0635513f179D50A207757E05759CbD106d7dFcE8`
+
 ## Live Deployment
 
 This repository is now deployed publicly on Sepolia with a live hosted gateway.
