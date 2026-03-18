@@ -1,6 +1,6 @@
-# OffchainResolver: CCIP-Read + EIP-712 Evidence Repo
+# OffchainResolver: CCIP-Read + EIP-712 Demo
 
-This repository is a minimal working project intended as verifiable previous-work evidence for an ENS Ecosystem grant application.
+This repository is a minimal working ENS-style offchain resolver demo.
 
 It demonstrates three core capabilities in a concrete, runnable form:
 
@@ -14,7 +14,7 @@ The implementation is intentionally small, but the cryptographic and protocol fl
 
 This project implements a minimal ENS-style offchain resolver. A client calls `resolve()`, the contract triggers CCIP-Read by reverting with `OffchainLookup`, an Express gateway constructs and signs a response, and the contract verifies that signed payload in `resolveWithProof()`.
 
-The demo is designed to be easy to inspect in a grant review:
+The implementation is intentionally small and easy to inspect:
 
 - the Solidity resolver is self-contained
 - the EIP-712 schema is shared between contract and TypeScript
@@ -56,9 +56,9 @@ The demo is designed to be easy to inspect in a grant review:
 - `scripts/demo.ts`
   - simulates the full CCIP-Read flow end to end
 - `test/OffchainResolver.t.sol`
-  - proves valid proof success, expired proof failure, and wrong signer failure
+  - covers valid proof success, expired proof failure, and wrong signer failure
 - `.env.example`
-  - template for Sepolia deployment, verification, and live proof variables
+  - template for Sepolia deployment, verification, and live demo variables
 
 ## How CCIP-Read Works In This Repo
 
@@ -176,7 +176,16 @@ Gateway endpoint:
 POST http://127.0.0.1:3000/resolve
 ```
 
-Expected request body:
+Standard CCIP-Read request body:
+
+```json
+{
+  "sender": "0xResolverAddress",
+  "data": "0xOffchainLookupCallData"
+}
+```
+
+Demo script request body:
 
 ```json
 {
@@ -256,7 +265,7 @@ npm run gateway
 npm run verify:sepolia
 ```
 
-7. Run a live proof against the public deployment:
+7. Run a live check against the public deployment:
 
 ```bash
 npm run prove:sepolia
@@ -306,6 +315,7 @@ By default it uses the official Sepolia ENS deployments:
 This repository is now deployed publicly on Sepolia with a live hosted gateway.
 
 - Network: `Sepolia`
+- Live ENS name: `chrisfranko.eth`
 - Verified resolver contract: [0x596EBB34AD8A020693E596EB03472daF57aF7910](https://sepolia.etherscan.io/address/0x596EBB34AD8A020693E596EB03472daF57aF7910#code)
 - Deployment transaction: [0xeaa95a3af4f5a5143c6e4bad7a6ea373222e00064b735a11c8ec288f32aa9a9c](https://sepolia.etherscan.io/tx/0xeaa95a3af4f5a5143c6e4bad7a6ea373222e00064b735a11c8ec288f32aa9a9c)
 - Allowed signer: `0x5508532b027D57b020e6C0BeDB1fE19a6d6C555c`
@@ -314,13 +324,13 @@ This repository is now deployed publicly on Sepolia with a live hosted gateway.
 - Gateway resolve endpoint: [https://ccip-read-resolver-2.onrender.com/resolve](https://ccip-read-resolver-2.onrender.com/resolve)
 - ENSIP-10 support: `supportsInterface(0x9061b923) == true`
 
-The live proof command is:
+The repository live demo command is:
 
 ```bash
 npm run prove:sepolia
 ```
 
-Successful live proof output:
+Successful repository demo output:
 
 ```text
 Resolver: 0x596EBB34AD8A020693E596EB03472daF57aF7910
@@ -332,7 +342,14 @@ Text key: url
 Final resolved value: https://resolver.demo/alice.eth/url
 ```
 
-This provides public, verifiable evidence of:
+Standard `ethers` ENS client lookup against the live Sepolia name:
+
+```text
+resolverAddress 0x596EBB34AD8A020693E596EB03472daF57aF7910
+text https://resolver.demo/chrisfranko.eth/url
+```
+
+This live deployment shows:
 
 - EIP-3668 `OffchainLookup`
 - EIP-712 typed data signing
@@ -355,7 +372,7 @@ Recovered signer: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
 Final resolved value: https://resolver.demo/alice.eth/url
 ```
 
-## Verification
+## Checks
 
 This repository includes:
 
@@ -366,4 +383,4 @@ This repository includes:
 - Foundry tests for the core verification paths
 - CI checks for build and test coverage
 
-That combination is intended to make the repo suitable for GitHub publication and direct inclusion as technical evidence in a grant application.
+That combination makes the repo easy to run, inspect, and extend.
