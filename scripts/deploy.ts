@@ -11,9 +11,11 @@ import {
 } from "ethers";
 
 import {
+  SEPOLIA_CHAIN_ID,
   DEFAULT_DEPLOYER_PRIVATE_KEY,
 } from "../src/config.js";
 import {
+  assertExpectedChainId,
   getAllowedSignerAddress,
   getGatewayUrl,
   getOptionalEnv,
@@ -60,6 +62,8 @@ const artifact = loadResolverArtifact();
 const factory = new ContractFactory(artifact.abi, getBytecode(artifact), deployer);
 const balanceBefore = await provider.getBalance(deployer.address);
 const network = await provider.getNetwork();
+
+assertExpectedChainId(network.chainId, SEPOLIA_CHAIN_ID, "Sepolia deployment");
 
 const resolver = await factory.deploy(allowedSignerAddress, gatewayUrl);
 await resolver.waitForDeployment();

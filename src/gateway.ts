@@ -174,6 +174,8 @@ export function createGatewayApp(context: GatewayContext): Express {
       response.status(400).json({
         error:
           'Expected either {"sender","data"} for CCIP-Read clients or {"resolver","name","data"} for demo scripts',
+        message:
+          'Expected either {"sender","data"} for CCIP-Read clients or {"resolver","name","data"} for demo scripts',
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown gateway error";
@@ -181,6 +183,7 @@ export function createGatewayApp(context: GatewayContext): Express {
         .status(message === "Gateway is configured for a different resolver address" ? 403 : 400)
         .json({
           error: message,
+          message,
         });
     }
   });

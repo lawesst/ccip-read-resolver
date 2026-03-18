@@ -6,12 +6,18 @@ import { type InterfaceAbi, Interface, JsonRpcProvider } from "ethers";
 
 import {
   DEFAULT_SAMPLE_NAME,
+  SEPOLIA_CHAIN_ID,
   DEFAULT_TEXT_KEY,
 } from "../src/config.js";
 import { buildTextLookup, decodeTextResult } from "../src/ens.js";
 import { decodeResolveCallData } from "../src/gateway.js";
 import { encodeGatewayResponse, recoverResolverSigner } from "../src/signing.js";
-import { getOptionalEnv, getRpcUrl, requireEnv } from "../src/runtime.js";
+import {
+  assertExpectedChainId,
+  getOptionalEnv,
+  getRpcUrl,
+  requireEnv,
+} from "../src/runtime.js";
 
 interface GatewayHttpResponse {
   result: string;
@@ -57,6 +63,8 @@ const name = getOptionalEnv("ENS_NAME") ?? DEFAULT_SAMPLE_NAME;
 const key = getOptionalEnv("TEXT_KEY") ?? DEFAULT_TEXT_KEY;
 const lookup = buildTextLookup(name, key);
 const { chainId } = await provider.getNetwork();
+
+assertExpectedChainId(chainId, SEPOLIA_CHAIN_ID, "Sepolia proof");
 
 let sender: string;
 let urls: string[];

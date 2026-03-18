@@ -6,10 +6,16 @@ import {
   DEFAULT_DEPLOYER_PRIVATE_KEY,
   INTERFACE_ID_ERC165,
   INTERFACE_ID_IEXTENDED_RESOLVER,
+  SEPOLIA_CHAIN_ID,
   SEPOLIA_ENS_REGISTRY_ADDRESS,
   SEPOLIA_NAME_WRAPPER_ADDRESS,
 } from "../src/config.js";
-import { getOptionalEnv, getRpcUrl, requireEnv } from "../src/runtime.js";
+import {
+  assertExpectedChainId,
+  getOptionalEnv,
+  getRpcUrl,
+  requireEnv,
+} from "../src/runtime.js";
 
 const ENS_REGISTRY_ABI = [
   "function owner(bytes32 node) view returns (address)",
@@ -51,6 +57,9 @@ const registryWriter = new Contract(registryAddress, ENS_REGISTRY_ABI, manager);
 const nameWrapper = new Contract(nameWrapperAddress, NAME_WRAPPER_ABI, provider);
 const nameWrapperWriter = new Contract(nameWrapperAddress, NAME_WRAPPER_ABI, manager);
 const targetResolver = new Contract(resolverAddress, ERC165_ABI, provider);
+const { chainId } = await provider.getNetwork();
+
+assertExpectedChainId(chainId, SEPOLIA_CHAIN_ID, "Sepolia resolver update");
 
 const node = namehash(targetName);
 const currentOwner = getAddress(await registry.owner(node));

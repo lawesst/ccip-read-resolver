@@ -6,6 +6,7 @@ import { AbiCoder } from "ethers";
 
 import { SEPOLIA_CHAIN_ID } from "../src/config.js";
 import {
+  assertExpectedChainId,
   getAllowedSignerAddress,
   getGatewayUrl,
   getOptionalEnv,
@@ -18,6 +19,8 @@ const etherscanApiKey = requireEnv("ETHERSCAN_API_KEY");
 const gatewayUrl = getGatewayUrl();
 const allowedSignerAddress = getAllowedSignerAddress({ allowDefaultSigner: false });
 const chainId = Number(getOptionalEnv("CHAIN_ID") ?? SEPOLIA_CHAIN_ID);
+
+assertExpectedChainId(chainId, SEPOLIA_CHAIN_ID, "Sepolia verification");
 
 const constructorArgs = abiCoder.encode(
   ["address", "string"],

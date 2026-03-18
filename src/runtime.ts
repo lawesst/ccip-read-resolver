@@ -52,3 +52,15 @@ export function requireEnv(name: string): string {
 
   return value;
 }
+
+export function assertExpectedChainId(
+  actualChainId: number | bigint,
+  expectedChainId: number,
+  label = "operation",
+): void {
+  if (Number(actualChainId) !== expectedChainId) {
+    throw new Error(
+      `${label} expected chainId ${expectedChainId}, but RPC returned ${actualChainId.toString()}`,
+    );
+  }
+}
