@@ -12,6 +12,7 @@
     "test": "forge test -vv",
     "deploy": "tsx scripts/deploy.ts",
     "deploy:sepolia": "tsx scripts/deploy.ts",
+    "check-name:sepolia": "tsx scripts/check-name.ts",
     "set-resolver:sepolia": "tsx scripts/set-resolver.ts",
     "verify:sepolia": "tsx scripts/verify.ts",
     "prove:sepolia": "tsx scripts/prove-live.ts",

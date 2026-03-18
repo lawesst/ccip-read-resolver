@@ -17,11 +17,14 @@ const resolverAddress = requireEnv("RESOLVER_ADDRESS");
 const provider = new JsonRpcProvider(rpcUrl);
 const { chainId } = await provider.getNetwork();
 const signer = new Wallet(privateKey);
+const configuredAddrValue = getOptionalEnv("ADDR_VALUE");
+const addrValue = configuredAddrValue ? getAddress(configuredAddrValue) : signer.address;
 
 const app = createGatewayApp({
   signer,
   chainId,
   expectedResolver: getAddress(resolverAddress),
+  addrValue,
   getCurrentTimestamp: async () => {
     const block = await provider.getBlock("latest");
     if (!block) {
@@ -36,4 +39,5 @@ app.listen(port, () => {
   console.log(`Gateway listening on http://127.0.0.1:${port}/resolve`);
   console.log(`Signing with ${signer.address} for chain ${chainId.toString()}`);
   console.log(`Allowed resolver: ${getAddress(resolverAddress)}`);
+  console.log(`addr(bytes32) value: ${addrValue}`);
 });

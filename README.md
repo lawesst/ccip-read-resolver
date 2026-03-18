@@ -7,6 +7,7 @@ It demonstrates three core capabilities in a concrete, runnable form:
 - EIP-3668 CCIP-Read with `OffchainLookup`
 - EIP-712 typed data signing
 - Offchain data resolution with onchain signature verification
+- ENSIP-10 resolution for `text(bytes32,string)` and `addr(bytes32)`
 
 The implementation is intentionally small, but the cryptographic and protocol flow is real. The contract reverts with `OffchainLookup`, a gateway signs a typed response offchain, and the resolver verifies that signature onchain before returning the resolved bytes.
 
@@ -52,9 +53,11 @@ The implementation is intentionally small and easy to inspect:
   - signs a sample response with the exact same domain and typed struct used by the contract
 - `gateway/server.ts`
   - minimal Express gateway with `POST /resolve`
-  - returns `result`, `validUntil`, and `signature`
+  - serves both `text(bytes32,string)` and `addr(bytes32)` lookups
 - `scripts/demo.ts`
   - simulates the full CCIP-Read flow end to end
+- `scripts/check-name.ts`
+  - resolves a live ENS name via `ethers` and prints its resolver, address record, and text record
 - `test/OffchainResolver.t.sol`
   - covers valid proof success, expired proof failure, and wrong signer failure
 - `.env.example`
@@ -201,7 +204,8 @@ Example response:
 {
   "result": "0x...",
   "validUntil": 1710000000,
-  "signature": "0x..."
+  "signature": "0x...",
+  "data": "0x..."
 }
 ```
 
@@ -271,6 +275,12 @@ npm run verify:sepolia
 npm run prove:sepolia
 ```
 
+8. Resolve a live ENS name through `ethers`:
+
+```bash
+npm run check-name:sepolia
+```
+
 The full Sepolia runbook and reviewer checklist are in [docs/sepolia-deployment.md](/Users/vicgunga/ccip-read-resolver/docs/sepolia-deployment.md).
 
 ## Point A Real Sepolia ENS Name At The Resolver
@@ -328,6 +338,12 @@ The repository live demo command is:
 
 ```bash
 npm run prove:sepolia
+```
+
+The live ENS smoke test command is:
+
+```bash
+npm run check-name:sepolia
 ```
 
 Successful repository demo output:

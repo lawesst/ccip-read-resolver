@@ -1,18 +1,25 @@
 import express, { type Express, type Request, type Response } from "express";
 import { AbiCoder, Wallet, getAddress, namehash } from "ethers";
 
-import { buildTextResult, dnsDecodeName, ensResolverInterface } from "./ens.js";
+import {
+  buildAddrResult,
+  buildTextResult,
+  dnsDecodeName,
+  ensResolverInterface,
+} from "./ens.js";
 import { encodeGatewayResponse, signResolverResponse } from "./signing.js";
 
 export interface GatewayContext {
   signer: Wallet;
   chainId: number | bigint;
   expectedResolver?: string;
+  addrValue?: string;
   getCurrentTimestamp?: () => Promise<number>;
 }
 
 const abiCoder = AbiCoder.defaultAbiCoder();
 const textSelector = ensResolverInterface.getFunction("text")!.selector.toLowerCase();
+const addrSelector = ensResolverInterface.getFunction("addr")!.selector.toLowerCase();
 
 export function decodeResolveCallData(callData: string): { name: string; data: string } {
   const [name, data] = abiCoder.decode(["bytes", "bytes"], callData) as unknown as [
@@ -22,22 +29,35 @@ export function decodeResolveCallData(callData: string): { name: string; data: s
   return { name, data };
 }
 
-function buildResolverResult(name: string, data: string): string {
-  if (data.slice(0, 10).toLowerCase() !== textSelector) {
-    throw new Error("This demo gateway only supports text(bytes32,string) lookups");
-  }
-
+function buildResolverResult(context: GatewayContext, name: string, data: string): string {
   const decodedName = dnsDecodeName(name);
-  const [node, key] = ensResolverInterface.decodeFunctionData("text", data) as unknown as [
-    string,
-    string,
-  ];
+  const expectedNode = namehash(decodedName).toLowerCase();
+  const selector = data.slice(0, 10).toLowerCase();
 
-  if (node.toLowerCase() !== namehash(decodedName).toLowerCase()) {
-    throw new Error("The DNS-encoded name does not match the namehash in resolver calldata");
+  if (selector === textSelector) {
+    const [node, key] = ensResolverInterface.decodeFunctionData("text", data) as unknown as [
+      string,
+      string,
+    ];
+
+    if (node.toLowerCase() !== expectedNode) {
+      throw new Error("The DNS-encoded name does not match the namehash in resolver calldata");
+    }
+
+    return buildTextResult(`https://resolver.demo/${decodedName}/${key}`);
   }
 
-  return buildTextResult(`https://resolver.demo/${decodedName}/${key}`);
+  if (selector === addrSelector) {
+    const [node] = ensResolverInterface.decodeFunctionData("addr", data) as unknown as [string];
+
+    if (node.toLowerCase() !== expectedNode) {
+      throw new Error("The DNS-encoded name does not match the namehash in resolver calldata");
+    }
+
+    return buildAddrResult(context.addrValue ?? context.signer.address);
+  }
+
+  throw new Error("This demo gateway only supports text(bytes32,string) and addr(bytes32) lookups");
 }
 
 async function buildSignedGatewayPayload(
@@ -59,7 +79,7 @@ async function buildSignedGatewayPayload(
     throw new Error("Gateway is configured for a different resolver address");
   }
 
-  const result = buildResolverResult(name, data);
+  const result = buildResolverResult(context, name, data);
   const currentTimestamp = context.getCurrentTimestamp
     ? await context.getCurrentTimestamp()
     : Math.floor(Date.now() / 1000);

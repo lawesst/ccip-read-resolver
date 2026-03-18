@@ -9,6 +9,7 @@ import {
 
 export const ensResolverInterface = new Interface([
   "function text(bytes32 node,string key) view returns (string)",
+  "function addr(bytes32 node) view returns (address)",
 ]);
 
 export function dnsEncodeName(name: string): string {
@@ -72,4 +73,19 @@ export function buildTextResult(value: string): string {
 
 export function decodeTextResult(result: string): string {
   return ensResolverInterface.decodeFunctionResult("text", result)[0] as string;
+}
+
+export function buildAddrLookup(name: string): { name: string; data: string } {
+  return {
+    name: dnsEncodeName(name),
+    data: ensResolverInterface.encodeFunctionData("addr", [namehash(name)]),
+  };
+}
+
+export function buildAddrResult(value: string): string {
+  return ensResolverInterface.encodeFunctionResult("addr", [value]);
+}
+
+export function decodeAddrResult(result: string): string {
+  return ensResolverInterface.decodeFunctionResult("addr", result)[0] as string;
 }
