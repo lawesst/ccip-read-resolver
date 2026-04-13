@@ -4,3 +4,4 @@ out
 broadcast
 .env
 *.swp
+.DS_Store

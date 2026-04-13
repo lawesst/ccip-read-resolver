@@ -1,8 +1,8 @@
 {
-  "name": "ccip-read-resolver",
+  "name": "signed-offchain-data-starter-kit",
   "version": "1.0.0",
   "private": true,
-  "description": "Minimal ENS CCIP-Read offchain resolver demo using EIP-3668 and EIP-712",
+  "description": "Starter kit for signed offchain reads using EIP-3668 and EIP-712, with ENS and config-reader examples",
   "engines": {
     "node": "22.x"
   },
@@ -12,6 +12,7 @@
     "test": "forge test -vv",
     "deploy": "tsx scripts/deploy.ts",
     "deploy:sepolia": "tsx scripts/deploy.ts",
+    "demo:config": "tsx scripts/demo-config.ts",
     "check-name:sepolia": "tsx scripts/check-name.ts",
     "set-resolver:sepolia": "tsx scripts/set-resolver.ts",
     "verify:sepolia": "tsx scripts/verify.ts",

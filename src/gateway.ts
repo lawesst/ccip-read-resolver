@@ -2,6 +2,12 @@ import express, { type Express, type Request, type Response } from "express";
 import { AbiCoder, Wallet, getAddress, namehash } from "ethers";
 
 import {
+  buildConfigResult,
+  configReaderInterface,
+  decodeConfigRequest,
+} from "./config-reader.js";
+import { DEFAULT_CONFIG_VALUE, SIGNED_CONFIG_READER_DOMAIN_NAME } from "./config.js";
+import {
   buildAddrResult,
   buildTextResult,
   dnsDecodeName,
@@ -14,12 +20,14 @@ export interface GatewayContext {
   chainId: number | bigint;
   expectedResolver?: string;
   addrValue?: string;
+  configValues?: Record<string, string>;
   getCurrentTimestamp?: () => Promise<number>;
 }
 
 const abiCoder = AbiCoder.defaultAbiCoder();
 const textSelector = ensResolverInterface.getFunction("text")!.selector.toLowerCase();
 const addrSelector = ensResolverInterface.getFunction("addr")!.selector.toLowerCase();
+const configSelector = configReaderInterface.getFunction("getString")!.selector.toLowerCase();
 
 export function decodeResolveCallData(callData: string): { name: string; data: string } {
   const [name, data] = abiCoder.decode(["bytes", "bytes"], callData) as unknown as [
@@ -29,35 +37,62 @@ export function decodeResolveCallData(callData: string): { name: string; data: s
   return { name, data };
 }
 
-function buildResolverResult(context: GatewayContext, name: string, data: string): string {
-  const decodedName = dnsDecodeName(name);
-  const expectedNode = namehash(decodedName).toLowerCase();
+function buildGatewayResult(
+  context: GatewayContext,
+  request: string,
+  data: string,
+): { result: string; domainName?: string } {
   const selector = data.slice(0, 10).toLowerCase();
 
-  if (selector === textSelector) {
-    const [node, key] = ensResolverInterface.decodeFunctionData("text", data) as unknown as [
-      string,
-      string,
-    ];
+  if (selector === textSelector || selector === addrSelector) {
+    const decodedName = dnsDecodeName(request);
+    const expectedNode = namehash(decodedName).toLowerCase();
 
-    if (node.toLowerCase() !== expectedNode) {
-      throw new Error("The DNS-encoded name does not match the namehash in resolver calldata");
+    if (selector === textSelector) {
+      const [node, key] = ensResolverInterface.decodeFunctionData("text", data) as unknown as [
+        string,
+        string,
+      ];
+
+      if (node.toLowerCase() !== expectedNode) {
+        throw new Error("The DNS-encoded name does not match the namehash in resolver calldata");
+      }
+
+      return {
+        result: buildTextResult(`https://resolver.demo/${decodedName}/${key}`),
+      };
     }
 
-    return buildTextResult(`https://resolver.demo/${decodedName}/${key}`);
-  }
-
-  if (selector === addrSelector) {
     const [node] = ensResolverInterface.decodeFunctionData("addr", data) as unknown as [string];
 
     if (node.toLowerCase() !== expectedNode) {
       throw new Error("The DNS-encoded name does not match the namehash in resolver calldata");
     }
 
-    return buildAddrResult(context.addrValue ?? context.signer.address);
+    return {
+      result: buildAddrResult(context.addrValue ?? context.signer.address),
+    };
   }
 
-  throw new Error("This demo gateway only supports text(bytes32,string) and addr(bytes32) lookups");
+  if (selector === configSelector) {
+    const expectedKey = decodeConfigRequest(request);
+    const [key] = configReaderInterface.decodeFunctionData("getString", data) as unknown as [
+      string,
+    ];
+
+    if (key !== expectedKey) {
+      throw new Error("The encoded request key does not match the key in calldata");
+    }
+
+    return {
+      result: buildConfigResult(context.configValues?.[key] ?? DEFAULT_CONFIG_VALUE),
+      domainName: SIGNED_CONFIG_READER_DOMAIN_NAME,
+    };
+  }
+
+  throw new Error(
+    "This starter-kit gateway supports text(bytes32,string), addr(bytes32), and getString(string) lookups",
+  );
 }
 
 async function buildSignedGatewayPayload(
@@ -79,19 +114,26 @@ async function buildSignedGatewayPayload(
     throw new Error("Gateway is configured for a different resolver address");
   }
 
-  const result = buildResolverResult(context, name, data);
+  const gatewayResult = buildGatewayResult(context, name, data);
   const currentTimestamp = context.getCurrentTimestamp
     ? await context.getCurrentTimestamp()
     : Math.floor(Date.now() / 1000);
   const validUntil = currentTimestamp + 10 * 60;
 
-  const signedResponse = await signResolverResponse(context.signer, context.chainId, {
-    name,
-    data,
-    result,
-    validUntil,
-    resolver,
-  });
+  const signedResponse = await signResolverResponse(
+    context.signer,
+    context.chainId,
+    {
+      name,
+      data,
+      result: gatewayResult.result,
+      validUntil,
+      resolver,
+    },
+    {
+      domainName: gatewayResult.domainName,
+    },
+  );
 
   return {
     result: signedResponse.result,
@@ -114,7 +156,7 @@ export function createGatewayApp(context: GatewayContext): Express {
   app.get("/", (_request: Request, response: Response) => {
     response.json({
       ok: true,
-      service: "ccip-read-resolver-gateway",
+      service: "signed-offchain-data-gateway",
       endpoints: {
         healthz: "/healthz",
         resolve: {
@@ -122,6 +164,7 @@ export function createGatewayApp(context: GatewayContext): Express {
           path: "/resolve",
         },
       },
+      integrations: ["ens.text", "ens.addr", "config.getString"],
     });
   });
 
@@ -144,12 +187,13 @@ export function createGatewayApp(context: GatewayContext): Express {
         },
         demo: {
           resolver: "0xresolverAddress",
-          name: "0xdnsEncodedName",
-          data: "0xresolverCalldata",
+          name: "0xrequestBytes",
+          data: "0xapplicationCalldata",
         },
       },
       configuredResolver: context.expectedResolver ?? null,
       chainId: context.chainId.toString(),
+      integrations: ["ens.text", "ens.addr", "config.getString"],
     });
   });
 

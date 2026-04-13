@@ -4,9 +4,9 @@ pragma solidity ^0.8.20;
 import {
     InvalidSigner,
     OffchainLookup,
-    OffchainResolver,
     ResponseExpired
-} from "../contracts/OffchainResolver.sol";
+} from "../contracts/BaseSignedOffchainReader.sol";
+import {OffchainResolver} from "../contracts/OffchainResolver.sol";
 
 interface Vm {
     function addr(uint256 privateKey) external returns (address);

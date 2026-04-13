@@ -27,16 +27,15 @@ interface FoundryArtifact {
   bytecode?: string | { object?: string };
 }
 
-function loadResolverArtifact(): FoundryArtifact {
-  const artifactUrl = new URL(
-    "../out/OffchainResolver.sol/OffchainResolver.json",
-    import.meta.url,
-  );
+function loadArtifact(contractName: string): FoundryArtifact {
+  const artifactUrl = new URL(`../out/${contractName}.sol/${contractName}.json`, import.meta.url);
 
   try {
     return JSON.parse(readFileSync(artifactUrl, "utf8")) as FoundryArtifact;
   } catch {
-    throw new Error('Missing Foundry artifact. Run "npm run build" before "npm run deploy".');
+    throw new Error(
+      `Missing ${contractName} artifact. Run "npm run build" before "npm run deploy".`,
+    );
   }
 }
 
@@ -45,7 +44,7 @@ function getBytecode(artifact: FoundryArtifact): string {
     typeof artifact.bytecode === "string" ? artifact.bytecode : artifact.bytecode?.object;
 
   if (typeof rawBytecode !== "string" || rawBytecode.length === 0) {
-    throw new Error("OffchainResolver artifact is missing bytecode");
+    throw new Error("Selected contract artifact is missing bytecode");
   }
 
   return rawBytecode.startsWith("0x") ? rawBytecode : `0x${rawBytecode}`;
@@ -54,24 +53,25 @@ function getBytecode(artifact: FoundryArtifact): string {
 const rpcUrl = getRpcUrl();
 const deployerPrivateKey = getOptionalEnv("DEPLOYER_PRIVATE_KEY") ?? DEFAULT_DEPLOYER_PRIVATE_KEY;
 const gatewayUrl = getGatewayUrl();
+const contractName = getOptionalEnv("CONTRACT_NAME") ?? "OffchainResolver";
 
 const provider = new JsonRpcProvider(rpcUrl);
 const deployer = new Wallet(deployerPrivateKey, provider);
 const allowedSignerAddress = getAllowedSignerAddress();
-const artifact = loadResolverArtifact();
+const artifact = loadArtifact(contractName);
 const factory = new ContractFactory(artifact.abi, getBytecode(artifact), deployer);
 const balanceBefore = await provider.getBalance(deployer.address);
 const network = await provider.getNetwork();
 
 assertExpectedChainId(network.chainId, SEPOLIA_CHAIN_ID, "Sepolia deployment");
 
-const resolver = await factory.deploy(allowedSignerAddress, gatewayUrl);
-await resolver.waitForDeployment();
+const contract = await factory.deploy(allowedSignerAddress, gatewayUrl);
+await contract.waitForDeployment();
 
 const balanceAfter = await provider.getBalance(deployer.address);
-const deploymentTx = resolver.deploymentTransaction();
+const deploymentTx = contract.deploymentTransaction();
 
-console.log(`Resolver deployed at ${await resolver.getAddress()}`);
+console.log(`${contractName} deployed at ${await contract.getAddress()}`);
 console.log(`Network chainId: ${network.chainId.toString()}`);
 console.log(`Deployer: ${deployer.address}`);
 console.log(`Allowed signer: ${allowedSignerAddress}`);

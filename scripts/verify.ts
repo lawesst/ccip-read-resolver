@@ -14,11 +14,12 @@ import {
 } from "../src/runtime.js";
 
 const abiCoder = AbiCoder.defaultAbiCoder();
-const resolverAddress = requireEnv("RESOLVER_ADDRESS");
+const contractAddress = getOptionalEnv("CONTRACT_ADDRESS") ?? requireEnv("RESOLVER_ADDRESS");
 const etherscanApiKey = requireEnv("ETHERSCAN_API_KEY");
 const gatewayUrl = getGatewayUrl();
 const allowedSignerAddress = getAllowedSignerAddress({ allowDefaultSigner: false });
 const chainId = Number(getOptionalEnv("CHAIN_ID") ?? SEPOLIA_CHAIN_ID);
+const contractName = getOptionalEnv("CONTRACT_NAME") ?? "OffchainResolver";
 
 assertExpectedChainId(chainId, SEPOLIA_CHAIN_ID, "Sepolia verification");
 
@@ -36,8 +37,8 @@ const args = [
   etherscanApiKey,
   "--constructor-args",
   constructorArgs,
-  resolverAddress,
-  "contracts/OffchainResolver.sol:OffchainResolver",
+  contractAddress,
+  `contracts/${contractName}.sol:${contractName}`,
 ];
 
 console.log("Running verification command:");

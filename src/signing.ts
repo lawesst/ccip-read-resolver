@@ -6,7 +6,8 @@ import {
   verifyTypedData,
 } from "ethers";
 
-export const OFFCHAIN_RESOLVER_DOMAIN_NAME = "OffchainResolver";
+import { OFFCHAIN_RESOLVER_DOMAIN_NAME } from "./config.js";
+
 export const OFFCHAIN_RESOLVER_DOMAIN_VERSION = "1";
 
 export const OFFCHAIN_RESOLVER_TYPES: Record<string, TypedDataField[]> = {
@@ -37,9 +38,10 @@ const abiCoder = AbiCoder.defaultAbiCoder();
 export function buildResolverDomain(
   chainId: number | bigint,
   resolver: string,
+  domainName = OFFCHAIN_RESOLVER_DOMAIN_NAME,
 ): TypedDataDomain {
   return {
-    name: OFFCHAIN_RESOLVER_DOMAIN_NAME,
+    name: domainName,
     version: OFFCHAIN_RESOLVER_DOMAIN_VERSION,
     chainId: BigInt(chainId),
     verifyingContract: resolver,
@@ -58,6 +60,7 @@ export async function signResolverResponse(
   signer: Wallet,
   chainId: number | bigint,
   payload: ResolverResponsePayload,
+  options?: { domainName?: string },
 ): Promise<SignedResolverResponse> {
   const normalizedPayload = {
     ...payload,
@@ -65,7 +68,7 @@ export async function signResolverResponse(
   };
 
   const signature = await signer.signTypedData(
-    buildResolverDomain(chainId, payload.resolver),
+    buildResolverDomain(chainId, payload.resolver, options?.domainName),
     OFFCHAIN_RESOLVER_TYPES,
     normalizedPayload,
   );
@@ -85,9 +88,10 @@ export function recoverResolverSigner(
   chainId: number | bigint,
   payload: ResolverResponsePayload,
   signature: string,
+  options?: { domainName?: string },
 ): string {
   return verifyTypedData(
-    buildResolverDomain(chainId, payload.resolver),
+    buildResolverDomain(chainId, payload.resolver, options?.domainName),
     OFFCHAIN_RESOLVER_TYPES,
     {
       ...payload,
