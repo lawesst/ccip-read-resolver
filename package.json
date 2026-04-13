@@ -22,9 +22,21 @@
     "demo": "tsx scripts/demo.ts",
     "check": "npm run typecheck && npm run build && npm run test"
   },
-  "keywords": [],
+  "keywords": [
+    "ccip-read",
+    "eip-3668",
+    "eip-712",
+    "ethereum",
+    "ens",
+    "offchain-data",
+    "solidity",
+    "typescript"
+  ],
   "license": "MIT",
   "type": "module",
+  "overrides": {
+    "path-to-regexp": "8.4.2"
+  },
   "dependencies": {
     "@openzeppelin/contracts": "^5.6.1",
     "dotenv": "^17.3.1",

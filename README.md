@@ -209,7 +209,7 @@ The ENS example remains the live public reference integration for this project.
 
 Current public artifacts:
 
-- Repository: [lawesst/signed-offchain-data-starter-kit](https://github.com/lawesst/signed-offchain-data-starter-kit)
+- Repository: [zynorr/signed-offchain-data-starter-kit](https://github.com/zynorr/signed-offchain-data-starter-kit)
 - Verified Sepolia resolver: [0x596EBB34AD8A020693E596EB03472daF57aF7910](https://sepolia.etherscan.io/address/0x596EBB34AD8A020693E596EB03472daF57aF7910#code)
 - Gateway: [https://ccip-read-resolver-2.onrender.com/resolve](https://ccip-read-resolver-2.onrender.com/resolve)
 - Live name: `chrisfranko.eth`
